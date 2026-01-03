@@ -1,0 +1,1 @@
+print("This is a placeholder for the pong_client.py file.")

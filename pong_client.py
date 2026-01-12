@@ -1,11 +1,17 @@
 import socket
 import pickle
 import threading
+
+
 # Update UI logic
+
 class PongClient:
+
     def __init__(self, host='localhost', port=5555):
+        
         # Initialize Pygame
         pygame.init()
+        
 
         # Display
         self.width = 800

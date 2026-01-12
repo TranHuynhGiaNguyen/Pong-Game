@@ -2,6 +2,8 @@ import socket
 import pickle
 import threading
 
+import pygame
+
 
 # Update UI logic
 
@@ -55,4 +57,29 @@ class PongClient:
             self.screen.blit(text, text.get_rect(center=(self.width//2, self.height//2)))
 
         pygame.display.flip()
-        
+    def run(self):
+        threading.Thread(
+            target=self.receive_game_state,
+            daemon=True
+        ).start()
+
+        clock = pygame.time.Clock()
+
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_UP]:
+                self.paddle_y -= self.paddle_speed
+            if keys[pygame.K_DOWN]:
+                self.paddle_y += self.paddle_speed
+
+            self.send_paddle_position()
+            self.draw()
+            clock.tick(60)
+
+        self.client.close()
+        pygame.quit()
+

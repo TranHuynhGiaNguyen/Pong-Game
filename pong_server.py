@@ -97,3 +97,9 @@ class PongServer:
                     self.reset_ball()
 
             time.sleep(0.016)  # ~60 FPS
+    def reset_ball(self):
+        ball = self.game_state['ball']
+        ball['x'] = 400
+        ball['y'] = 300
+        ball['dx'] = 4 if ball['dx'] > 0 else -4
+        ball['dy'] = 4

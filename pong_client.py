@@ -83,3 +83,6 @@ class PongClient:
         self.client.close()
         pygame.quit()
 
+if __name__ == "__main__":
+    client = PongClient()
+    client.run()

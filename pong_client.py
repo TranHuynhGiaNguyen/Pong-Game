@@ -1,24 +1,35 @@
 import socket
 import pickle
 import threading
-
 import pygame
 
-
-# Update UI logic
-
 class PongClient:
-
     def __init__(self, host='localhost', port=5555):
+        # 1. Khởi tạo các biến cơ bản trước để tránh lỗi "AttributeError"
+        self.player_id = 0
+        self.game_state = None
+        self.running = True
+        self.paddle_y = 250
+        self.paddle_speed = 10
         
-        # Initialize Pygame
+        # 2. Khởi tạo Pygame
         pygame.init()
-        
 
-        # Display
+        # 3. Thiết lập kết nối Socket
+        try:
+            self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client.connect((host, port))
+            # Nhận ID từ server (Giả sử server gửi ID đầu tiên)
+            self.player_id = pickle.loads(self.client.recv(1024))
+        except Exception as e:
+            print(f"Lỗi kết nối: {e}")
+            self.running = False
+
+        # 4. Thiết lập hiển thị
         self.width = 800
         self.height = 600
         self.screen = pygame.display.set_mode((self.width, self.height))
+        # Bây giờ self.player_id đã tồn tại, không còn bị lỗi dòng dưới:
         pygame.display.set_caption(f"Pong - Player {self.player_id + 1}")
 
         # Colors
@@ -28,6 +39,25 @@ class PongClient:
         # Font
         self.font = pygame.font.Font(None, 74)
         self.small_font = pygame.font.Font(None, 36)
+
+    # Thêm hàm nhận dữ liệu để khớp với lệnh gọi trong run()
+    def receive_game_state(self):
+        while self.running:
+            try:
+                data = self.client.recv(4096)
+                if data:
+                    self.game_state = pickle.loads(data)
+            except:
+                break
+
+    # Thêm hàm gửi dữ liệu để khớp với lệnh gọi trong run()
+    def send_paddle_position(self):
+        try:
+            # Gửi tọa độ Y của mình lên cho Server
+            self.client.send(pickle.dumps(self.paddle_y))
+        except:
+            pass
+
     def draw(self):
         self.screen.fill(self.BLACK)
 
@@ -57,7 +87,9 @@ class PongClient:
             self.screen.blit(text, text.get_rect(center=(self.width//2, self.height//2)))
 
         pygame.display.flip()
+
     def run(self):
+        # Chạy luồng nhận dữ liệu từ server
         threading.Thread(
             target=self.receive_game_state,
             daemon=True
@@ -71,9 +103,10 @@ class PongClient:
                     self.running = False
 
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_UP]:
+            # Giới hạn biên để paddle không chạy ra ngoài màn hình
+            if keys[pygame.K_UP] and self.paddle_y > 0:
                 self.paddle_y -= self.paddle_speed
-            if keys[pygame.K_DOWN]:
+            if keys[pygame.K_DOWN] and self.paddle_y < self.height - 100:
                 self.paddle_y += self.paddle_speed
 
             self.send_paddle_position()

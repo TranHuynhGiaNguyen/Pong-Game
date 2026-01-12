@@ -119,3 +119,29 @@ class PongServer:
                         self.clients.remove(client)
 
             time.sleep(0.016)
+
+    def start(self):
+        threading.Thread(target=self.update_game, daemon=True).start()
+        threading.Thread(target=self.broadcast_game_state, daemon=True).start()
+
+        player_id = 0
+        while self.running and len(self.clients) < 2:
+            conn, _ = self.server.accept()
+            self.clients.append(conn)
+            threading.Thread(
+                target=self.handle_client,
+                args=(conn, player_id),
+                daemon=True
+            ).start()
+            player_id += 1
+
+        try:
+            while self.running:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            self.running = False
+            self.server.close()
+    
+if __name__ == "__main__":
+    server = PongServer()
+    server.start() 

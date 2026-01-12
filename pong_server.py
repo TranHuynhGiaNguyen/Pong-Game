@@ -22,7 +22,7 @@ class PongServer:
         self.clients = []
         self.running = True
         self.game_started = False
-        
+
     def handle_client(self, conn, player_id):
         print(f"Player {player_id} connected")
         conn.send(pickle.dumps(player_id))
@@ -45,3 +45,55 @@ class PongServer:
         if conn in self.clients:
             self.clients.remove(conn)
         print(f"Player {player_id} disconnected")
+        
+    def update_game(self):
+        while self.running:
+            if len(self.clients) == 2 and self.game_started:
+                ball = self.game_state['ball']
+
+                # Update ball position
+                ball['x'] += ball['dx']
+                ball['y'] += ball['dy']
+
+                # Ball collision with top/bottom
+                if ball['y'] <= ball['radius'] or ball['y'] >= self.game_state['height'] - ball['radius']:
+                    ball['dy'] *= -1
+
+                # Ball collision with paddles
+                p1 = self.game_state['paddle1']
+                p2 = self.game_state['paddle2']
+                pw = self.game_state['paddle_width']
+                ph = self.game_state['paddle_height']
+
+                # Left paddle collision
+                if (ball['x'] - ball['radius'] <= pw and
+                        p1['y'] <= ball['y'] <= p1['y'] + ph):
+                    ball['dx'] = abs(ball['dx']) * 1.05  # Speed increase
+                    # Add spin based on where ball hits paddle
+                    hit_pos = (ball['y'] - p1['y']) / ph
+                    ball['dy'] += (hit_pos - 0.5) * 2
+
+                # Right paddle collision
+                if (ball['x'] + ball['radius'] >= self.game_state['width'] - pw and
+                        p2['y'] <= ball['y'] <= p2['y'] + ph):
+                    ball['dx'] = -abs(ball['dx']) * 1.05  # Speed increase
+                    # Add spin based on where ball hits paddle
+                    hit_pos = (ball['y'] - p2['y']) / ph
+                    ball['dy'] += (hit_pos - 0.5) * 2
+
+                # Cap ball speed
+                max_speed = 15
+                if abs(ball['dx']) > max_speed:
+                    ball['dx'] = max_speed if ball['dx'] > 0 else -max_speed
+                if abs(ball['dy']) > max_speed:
+                    ball['dy'] = max_speed if ball['dy'] > 0 else -max_speed
+
+                # Scoring
+                if ball['x'] <= 0:
+                    p2['score'] += 1
+                    self.reset_ball()
+                elif ball['x'] >= self.game_state['width']:
+                    p1['score'] += 1
+                    self.reset_ball()
+
+            time.sleep(0.016)  # ~60 FPS

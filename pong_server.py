@@ -96,10 +96,26 @@ class PongServer:
                     p1['score'] += 1
                     self.reset_ball()
 
-            time.sleep(0.016)  # ~60 FPS
+            time.sleep(0.016)  # ~60 FPSdef reset_ball(self):
+
     def reset_ball(self):
         ball = self.game_state['ball']
         ball['x'] = 400
         ball['y'] = 300
         ball['dx'] = 4 if ball['dx'] > 0 else -4
         ball['dy'] = 4
+    def broadcast_game_state(self):
+        while self.running:
+            if len(self.clients) == 2:
+                if not self.game_started:
+                    self.game_started = True
+                    print("Game started!")
+
+                data = pickle.dumps(self.game_state)
+                for client in self.clients[:]:
+                    try:
+                        client.send(data)
+                    except:
+                        self.clients.remove(client)
+
+            time.sleep(0.016)

@@ -1,3 +1,6 @@
+import socket
+import pickle
+import threading
 # Update UI logic
 class PongClient:
     def __init__(self, host='localhost', port=5555):
@@ -46,3 +49,4 @@ class PongClient:
             self.screen.blit(text, text.get_rect(center=(self.width//2, self.height//2)))
 
         pygame.display.flip()
+        

@@ -22,3 +22,26 @@ class PongServer:
         self.clients = []
         self.running = True
         self.game_started = False
+        
+    def handle_client(self, conn, player_id):
+        print(f"Player {player_id} connected")
+        conn.send(pickle.dumps(player_id))
+
+        while self.running:
+            try:
+                data = conn.recv(1024)
+                if not data:
+                    break
+
+                paddle_y = pickle.loads(data)
+                if player_id == 0:
+                    self.game_state['paddle1']['y'] = paddle_y
+                else:
+                    self.game_state['paddle2']['y'] = paddle_y
+            except:
+                break
+
+        conn.close()
+        if conn in self.clients:
+            self.clients.remove(conn)
+        print(f"Player {player_id} disconnected")

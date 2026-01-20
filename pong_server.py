@@ -3,7 +3,10 @@ import threading
 import pickle
 import time
 import random
+<<<<<<< HEAD
 import struct
+=======
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
 
 class PongServer:
     def __init__(self, host='localhost', port=5555):
@@ -21,10 +24,17 @@ class PongServer:
             'height': 600,
             'paddle_width': 15,
             'paddle_height': 100,
+<<<<<<< HEAD
             'status': 'waiting_connection',  # waiting_connection -> waiting_ready -> playing -> game_over
             'player1_ready': False,
             'player2_ready': False,
             'win_score': 5,  # Fixed win score
+=======
+            'status': 'waiting_connection',  # waiting_connection -> setting_score -> waiting_ready -> playing -> game_over
+            'player1_ready': False,
+            'player2_ready': False,
+            'win_score': None,  # Will be set by player 1
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
             'ball_speed_multiplier': 1.0,  # Increases with each hit
             'winner': None,
             'player1_play_again': False,
@@ -45,6 +55,7 @@ class PongServer:
 
         while self.running:
             try:
+<<<<<<< HEAD
                 # Receive 4-byte length header
                 length_data = b''
                 while len(length_data) < 4:
@@ -67,6 +78,10 @@ class PongServer:
                     data += chunk
                 
                 if len(data) < msg_length:
+=======
+                data = conn.recv(1024)
+                if not data:
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                     break
 
                 client_data = pickle.loads(data)
@@ -74,10 +89,18 @@ class PongServer:
                 if isinstance(client_data, dict):
                     paddle_y = client_data.get('paddle_y', 250)
                     ready_status = client_data.get('ready', False)
+<<<<<<< HEAD
+=======
+                    win_score_input = client_data.get('win_score', '')
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                     play_again = client_data.get('play_again', False)
                 else:
                     paddle_y = client_data
                     ready_status = False
+<<<<<<< HEAD
+=======
+                    win_score_input = ''
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                     play_again = False
                 
                 paddle_y = max(0, min(paddle_y, self.game_state['height'] - self.game_state['paddle_height']))
@@ -86,6 +109,18 @@ class PongServer:
                     self.game_state['paddle1']['y'] = paddle_y
                     self.game_state['player1_ready'] = ready_status
                     self.game_state['player1_play_again'] = play_again
+<<<<<<< HEAD
+=======
+                    
+                    # Player 1 sets win score
+                    if (self.game_state['status'] == 'setting_score' and 
+                        win_score_input and 
+                        win_score_input.isdigit()):
+                        score = int(win_score_input)
+                        if 1 <= score <= 99:
+                            self.game_state['win_score'] = score
+                            print(f"🎯 Win score set to: {score}")
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                 else:
                     self.game_state['paddle2']['y'] = paddle_y
                     self.game_state['player2_ready'] = ready_status
@@ -94,6 +129,19 @@ class PongServer:
                 # Check transitions
                 status = self.game_state['status']
                 
+<<<<<<< HEAD
+=======
+                # Setting score -> Waiting ready (when score is set and both ready)
+                if (status == 'setting_score' and 
+                    self.game_state['win_score'] is not None and
+                    self.game_state['player1_ready'] and 
+                    self.game_state['player2_ready']):
+                    self.game_state['status'] = 'waiting_ready'
+                    self.game_state['player1_ready'] = False
+                    self.game_state['player2_ready'] = False
+                    print(f"⏳ Waiting for players to ready up (First to {self.game_state['win_score']})")
+                
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                 # Waiting ready -> Playing
                 if (status == 'waiting_ready' and 
                     self.game_state['player1_ready'] and 
@@ -131,17 +179,31 @@ class PongServer:
         print("🔄 Restarting game...")
         self.game_state['paddle1']['score'] = 0
         self.game_state['paddle2']['score'] = 0
+<<<<<<< HEAD
         self.game_state['status'] = 'waiting_ready'
+=======
+        self.game_state['status'] = 'setting_score'
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         self.game_state['player1_ready'] = False
         self.game_state['player2_ready'] = False
         self.game_state['player1_play_again'] = False
         self.game_state['player2_play_again'] = False
+<<<<<<< HEAD
+=======
+        self.game_state['win_score'] = None
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         self.game_state['winner'] = None
         self.game_state['ball_speed_multiplier'] = 1.0
         self.reset_ball()
 
     def check_winner(self):
         """Check if someone won"""
+<<<<<<< HEAD
+=======
+        if self.game_state['win_score'] is None:
+            return False
+        
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         p1_score = self.game_state['paddle1']['score']
         p2_score = self.game_state['paddle2']['score']
         win_score = self.game_state['win_score']
@@ -258,6 +320,7 @@ class PongServer:
             if len(self.clients) == 2:
                 if not self.game_started:
                     self.game_started = True
+<<<<<<< HEAD
                     # Both players connected, go to waiting ready
                     self.game_state['status'] = 'waiting_ready'
                     print("👥 Both players connected! Press READY to start (First to 5)...")
@@ -268,6 +331,16 @@ class PongServer:
                 for client in self.clients[:]:
                     try:
                         client.sendall(msg)  # Use sendall to ensure complete send
+=======
+                    # Both players connected, go to setting score
+                    self.game_state['status'] = 'setting_score'
+                    print("👥 Both players connected! Player 1 should set win score...")
+
+                data = pickle.dumps(self.game_state)
+                for client in self.clients[:]:
+                    try:
+                        client.send(data)
+>>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                     except:
                         if client in self.clients:
                             self.clients.remove(client)

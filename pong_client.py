@@ -4,10 +4,7 @@ import threading
 import pygame
 import random
 import math
-<<<<<<< HEAD
 import struct
-=======
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
 
 class Particle:
     def __init__(self, x, y, color):
@@ -42,13 +39,7 @@ class PongClient:
         self.paddle_speed = 10
         self.particles = []
         self.is_ready = False
-<<<<<<< HEAD
         self.play_again = False  # For replay
-=======
-        self.win_score_input = ""  # For setting win score
-        self.play_again = False  # For replay
-        self.input_focused = False  # NEW: Track if input is focused
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         
         # 2. Khởi tạo Pygame
         pygame.init()
@@ -88,7 +79,6 @@ class PongClient:
         self.font_tiny = pygame.font.Font(None, 24)
 
     def receive_game_state(self):
-<<<<<<< HEAD
         """Receive game state with proper message framing"""
         while self.running:
             try:
@@ -124,59 +114,21 @@ class PongClient:
                 
                 self.game_state = new_state
                     
-=======
-        while self.running:
-            try:
-                data = self.client.recv(4096)
-                if data:
-                    new_state = pickle.loads(data)
-                    
-                    # Auto-focus input when entering setting_score screen
-                    old_status = self.game_state.get('status', '') if self.game_state else ''
-                    new_status = new_state.get('status', '')
-                    
-                    if old_status != 'setting_score' and new_status == 'setting_score':
-                        if self.player_id == 0:
-                            self.input_focused = True
-                            print("🎮 Input auto-focused! You can type now.")
-                    
-                    # Detect collision for particle effects (only if both states have ball data)
-                    if (self.game_state and new_state and 
-                        'ball' in self.game_state and 'ball' in new_state):
-                        old_ball = self.game_state['ball']
-                        new_ball = new_state['ball']
-                        if (abs(old_ball.get('dx', 0)) != abs(new_ball.get('dx', 0)) or 
-                            abs(old_ball.get('dy', 0)) != abs(new_ball.get('dy', 0))):
-                            self.create_particles(new_ball.get('x', 400), new_ball.get('y', 300))
-                    
-                    self.game_state = new_state
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
             except Exception as e:
                 print(f"❌ Error receiving game state: {e}")
                 break
 
     def send_game_data(self):
-<<<<<<< HEAD
         """Send paddle position, ready state, and play_again with message framing"""
-=======
-        """Send paddle position, ready state, win_score, and play_again"""
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         try:
             data = {
                 'paddle_y': self.paddle_y,
                 'ready': self.is_ready,
-<<<<<<< HEAD
                 'play_again': self.play_again
             }
             msg = pickle.dumps(data)
             # Send length prefix + message
             self.client.send(struct.pack('!I', len(msg)) + msg)
-=======
-                'win_score': self.win_score_input,
-                'play_again': self.play_again
-            }
-            self.client.send(pickle.dumps(data))
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
         except:
             pass
 
@@ -303,120 +255,8 @@ class PongClient:
             label = self.font_small.render(player_text, True, self.WHITE)
             self.screen.blit(label, (x_pos + 12, 20))
 
-<<<<<<< HEAD
             # === WAITING READY ===
             if game_status == 'waiting_ready':
-=======
-            # === SETTING WIN SCORE ===
-            if game_status == 'setting_score':
-                title = self.font_medium.render("SET WIN SCORE", True, self.PRIMARY)
-                title_rect = title.get_rect(center=(self.width // 2, 150))
-                self.screen.blit(title, title_rect)
-                
-                win_score = self.game_state.get('win_score', '')
-                if win_score:
-                    # Score has been set
-                    info_text = f"First to {win_score} wins!"
-                    info = self.font_medium.render(info_text, True, self.GREEN)
-                    info_rect = info.get_rect(center=(self.width // 2, 250))
-                    self.screen.blit(info, info_rect)
-                    
-                    # Ready status
-                    p1_ready = self.game_state.get('player1_ready', False)
-                    p2_ready = self.game_state.get('player2_ready', False)
-                    
-                    p1_text = "P1: READY ✓" if p1_ready else "P1: NOT READY"
-                    p2_text = "P2: READY ✓" if p2_ready else "P2: NOT READY"
-                    p1_color = self.GREEN if p1_ready else self.ORANGE
-                    p2_color = self.GREEN if p2_ready else self.ORANGE
-                    
-                    p1_surf = self.font_small.render(p1_text, True, p1_color)
-                    p2_surf = self.font_small.render(p2_text, True, p2_color)
-                    
-                    self.screen.blit(p1_surf, (250, 320))
-                    self.screen.blit(p2_surf, (250, 360))
-                    
-                    # Ready button
-                    mouse_pos = pygame.mouse.get_pos()
-                    ready_btn = pygame.Rect(self.width // 2 - 100, 420, 200, 60)
-                    hover = ready_btn.collidepoint(mouse_pos)
-                    
-                    btn_color = self.GREEN if self.is_ready else self.PRIMARY
-                    btn_text = "READY ✓" if self.is_ready else "CLICK TO READY"
-                    
-                    self.draw_button(ready_btn.x, ready_btn.y, ready_btn.w, ready_btn.h, btn_text, btn_color, hover)
-                    
-                else:
-                    if self.player_id == 0:
-                        # Player 1: Input box
-                        prompt = "Enter win score (1-99):"
-                        prompt_text = self.font_small.render(prompt, True, self.WHITE)
-                        prompt_rect = prompt_text.get_rect(center=(self.width // 2, 230))
-                        self.screen.blit(prompt_text, prompt_rect)
-                        
-                        # Input box with focus indication
-                        input_box = pygame.Rect(self.width // 2 - 80, 280, 160, 70)
-                        box_color = self.PRIMARY if self.input_focused else self.LINE_COLOR
-                        pygame.draw.rect(self.screen, box_color, input_box, 3, border_radius=10)
-                        
-                        input_bg = pygame.Surface((160, 70), pygame.SRCALPHA)
-                        alpha = 50 if self.input_focused else 30
-                        pygame.draw.rect(input_bg, (*self.PRIMARY, alpha), (0, 0, 160, 70), border_radius=10)
-                        self.screen.blit(input_bg, (input_box.x, input_box.y))
-                        
-                        # Display input text with cursor
-                        input_text = self.win_score_input if self.win_score_input else ""
-                        if self.input_focused and int(pygame.time.get_ticks() / 500) % 2 == 0:
-                            cursor = "|"
-                        else:
-                            cursor = ""
-                        display_text = input_text + cursor
-                        
-                        if display_text:
-                            input_display = self.font_large.render(display_text, True, self.WHITE)
-                        else:
-                            # Placeholder
-                            input_display = self.font_medium.render("__", True, self.LINE_COLOR)
-                        
-                        input_rect = input_display.get_rect(center=(self.width // 2, 315))
-                        self.screen.blit(input_display, input_rect)
-                        
-                        # Submit button
-                        mouse_pos = pygame.mouse.get_pos()
-                        submit_btn = pygame.Rect(self.width // 2 - 100, 380, 200, 60)
-                        hover = submit_btn.collidepoint(mouse_pos)
-                        
-                        can_submit = self.win_score_input and self.win_score_input.isdigit() and 1 <= int(self.win_score_input) <= 99
-                        btn_color = self.GREEN if can_submit else self.LINE_COLOR
-                        
-                        self.draw_button(submit_btn.x, submit_btn.y, submit_btn.w, submit_btn.h, "SET SCORE", btn_color, hover and can_submit)
-                        
-                        hint = "Click input box to type, then click SET SCORE"
-                        hint_surf = self.font_tiny.render(hint, True, self.LINE_COLOR)
-                        hint_rect = hint_surf.get_rect(center=(self.width // 2, 460))
-                        self.screen.blit(hint_surf, hint_rect)
-                        
-                    else:
-                        # Player 2: Waiting
-                        wait = "Waiting for Player 1"
-                        wait_text = self.font_medium.render(wait, True, self.WHITE)
-                        wait_rect = wait_text.get_rect(center=(self.width // 2, 280))
-                        self.screen.blit(wait_text, wait_rect)
-                        
-                        wait2 = "to set win score..."
-                        wait2_text = self.font_small.render(wait2, True, self.ORANGE)
-                        wait2_rect = wait2_text.get_rect(center=(self.width // 2, 330))
-                        self.screen.blit(wait2_text, wait2_rect)
-                        
-                        # Animation
-                        dots = "." * (int(pygame.time.get_ticks() / 500) % 4)
-                        dots_surf = self.font_medium.render(dots, True, self.SECONDARY)
-                        dots_rect = dots_surf.get_rect(center=(self.width // 2, 380))
-                        self.screen.blit(dots_surf, dots_rect)
-
-            # === WAITING READY ===
-            elif game_status == 'waiting_ready':
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                 p1_ready = self.game_state.get('player1_ready', False)
                 p2_ready = self.game_state.get('player2_ready', False)
                 
@@ -621,42 +461,8 @@ class PongClient:
                             mouse_pos = pygame.mouse.get_pos()
                             print(f"🖱️ Mouse clicked at {mouse_pos}, status: {status}")
                             
-<<<<<<< HEAD
                             # Waiting ready screen
                             if status == 'waiting_ready':
-=======
-                            # Setting score screen
-                            if status == 'setting_score':
-                                win_score = self.game_state.get('win_score', '')
-                                
-                                if win_score:
-                                    # Ready button
-                                    ready_btn = pygame.Rect(self.width // 2 - 100, 420, 200, 60)
-                                    if ready_btn.collidepoint(mouse_pos):
-                                        self.is_ready = not self.is_ready
-                                        print(f"✅ Ready toggled: {self.is_ready}")
-                                else:
-                                    if self.player_id == 0:
-                                        # Input box click (focus)
-                                        input_box = pygame.Rect(self.width // 2 - 80, 280, 160, 70)
-                                        if input_box.collidepoint(mouse_pos):
-                                            self.input_focused = True
-                                            print(f"🎯 Input focused! Type your number now.")
-                                        
-                                        # Submit button
-                                        submit_btn = pygame.Rect(self.width // 2 - 100, 380, 200, 60)
-                                        if submit_btn.collidepoint(mouse_pos):
-                                            # Submit score
-                                            if self.win_score_input and self.win_score_input.isdigit():
-                                                score = int(self.win_score_input)
-                                                if 1 <= score <= 99:
-                                                    # Score will be sent in next send_game_data call
-                                                    self.input_focused = False
-                                                    print(f"📤 Submitting score: {score}")
-                            
-                            # Waiting ready screen
-                            elif status == 'waiting_ready':
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
                                 ready_btn = pygame.Rect(self.width // 2 - 120, 380, 240, 70)
                                 if ready_btn.collidepoint(mouse_pos):
                                     self.is_ready = not self.is_ready
@@ -671,48 +477,12 @@ class PongClient:
                         if self.game_state:
                             status = self.game_state.get('status', '')
                         
-<<<<<<< HEAD
                         # SPACE as alternative to mouse click
                         if event.key == pygame.K_SPACE:
                             if status == 'waiting_ready':
                                 self.is_ready = not self.is_ready
                             elif status == 'game_over':
                                 self.play_again = not self.play_again
-=======
-                        # Setting win score (Player 1 only, keyboard input)
-                        if status == 'setting_score' and self.player_id == 0:
-                            win_score = self.game_state.get('win_score', '')
-                            print(f"🔍 Key pressed: {event.key}, unicode: '{event.unicode}', focused: {self.input_focused}, win_score set: {bool(win_score)}")
-                            
-                            if not win_score and self.input_focused:
-                                if event.key == pygame.K_RETURN and self.win_score_input:
-                                    # Submit win score (will be sent in send_game_data)
-                                    if self.win_score_input.isdigit():
-                                        score = int(self.win_score_input)
-                                        if 1 <= score <= 99:
-                                            self.input_focused = False
-                                            print(f"✅ Score submitted: {score}")
-                                elif event.key == pygame.K_BACKSPACE:
-                                    self.win_score_input = self.win_score_input[:-1]
-                                    print(f"⌫ Backspace, now: '{self.win_score_input}'")
-                                elif event.key == pygame.K_ESCAPE:
-                                    # Unfocus input
-                                    self.input_focused = False
-                                    print("❌ Input unfocused")
-                                elif event.unicode.isdigit() and len(self.win_score_input) < 2:
-                                    self.win_score_input += event.unicode
-                                    print(f"✏️ Added '{event.unicode}', now: '{self.win_score_input}'")
-                        
-                        # SPACE as alternative to mouse click (only when not typing)
-                        if event.key == pygame.K_SPACE and not self.input_focused:
-                            if status == 'setting_score':
-                                if self.game_state.get('win_score'):
-                                    self.is_ready = not self.is_ready
-                                elif status == 'waiting_ready':
-                                    self.is_ready = not self.is_ready
-                                elif status == 'game_over':
-                                    self.play_again = not self.play_again
->>>>>>> 377a9811d795c3effc609b1ab861e894c26ba0aa
 
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_UP] and self.paddle_y > 0:
